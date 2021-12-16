@@ -9,6 +9,57 @@ const server = express();
 
 server.listen(8080);
 
+server.post("/removeStudent", (req, res) => {
+  let body;
+  req.on("data", function (data) {
+    body += data;
+    if (body.substr(0, 9) == "undefined") {
+      body = body.substr(9, body.length - 9);
+    }
+  });
+
+  req.on("end", function () {
+    body = JSON.parse(body.toString("utf8"));
+    console.log(body);
+    async function removeStudent() {
+      await students.destroy({
+        where: {
+          firstName: body.firstName,
+          lastName: body.lastName,
+          email: body.email,
+        },
+      });
+    }
+    removeStudent();
+    res.end("removed");
+  });
+});
+
+server.post("/removeCampus", (req, res) => {
+  let body;
+  req.on("data", function (data) {
+    body += data;
+    if (body.substr(0, 9) == "undefined") {
+      body = body.substr(9, body.length - 9);
+    }
+  });
+
+  req.on("end", function () {
+    body = JSON.parse(body.toString("utf8"));
+    console.log(body);
+    async function removeCampus() {
+      await campuses.destroy({
+        where: {
+          name: body.name,
+          address: body.address,
+        },
+      });
+    }
+    removeCampus();
+    res.end("removed");
+  });
+});
+
 server.post("/campuses", (req, res) => {
   let allCampuses = "";
   async function viewCampuses() {
