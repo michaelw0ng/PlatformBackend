@@ -9,6 +9,30 @@ const server = express();
 
 server.listen(8080);
 
+server.post("/campuses", (req, res) => {
+  let allCampuses = "";
+  async function viewCampuses() {
+    const viewCampuses = await campuses.findAll();
+    console.log(viewCampuses.every((campus) => campus instanceof campuses));
+    console.log("All campuses:", JSON.stringify(viewCampuses));
+    allCampuses = JSON.stringify(viewCampuses);
+    res.end(allCampuses);
+  }
+  viewCampuses();
+});
+
+server.post("/students", (req, res) => {
+  let allStudents = "";
+  async function viewStudents() {
+    const viewStudents = await students.findAll();
+    console.log(viewStudents.every((student) => student instanceof students));
+    console.log("All students:", JSON.stringify(viewStudents));
+    allStudents = JSON.stringify(viewStudents);
+    res.end(allStudents);
+  }
+  viewStudents();
+});
+
 server.get("/", () => {
   console.log("hello");
 });
@@ -98,6 +122,43 @@ const addStudent = (req, res) => {
   req.on("end", function () {
     body = JSON.parse(body.toString("utf8"));
     console.log(body);
+    async function createStudent() {
+      await students.destroy({
+        where: {
+          firstName: body.firstName,
+          lastName: body.lastName,
+          email: body.email,
+        },
+      });
+      const newStudent = await students.create(body);
+      console.log(newStudent.id);
+      res.end("recorded");
+    }
+    createStudent();
+    async function viewStudents() {
+      const viewStudents = await students.findAll();
+      console.log(viewStudents.every((student) => student instanceof students));
+      console.log("All students:", JSON.stringify(viewStudents));
+    }
+    viewStudents();
+    async function findTables() {
+      sequelize
+        .getQueryInterface()
+        .showAllSchemas()
+        .then((tableObj) => {
+          console.log("// Tables in database", "==========================");
+          console.log(tableObj);
+        })
+        .catch((err) => {
+          console.log("showAllSchemas ERROR", err);
+        });
+    }
+    async function sync() {
+      await sequelize.sync();
+    }
+
+    sync();
+    findTables();
   });
 };
 
@@ -114,6 +175,12 @@ const addCampus = (req, res) => {
     body = JSON.parse(body.toString("utf8"));
     console.log(body);
     async function createCampus() {
+      await campuses.destroy({
+        where: {
+          name: body.name,
+          address: body.address,
+        },
+      });
       const newCampus = await campuses.create(body);
       console.log(newCampus.id);
       res.end("recorded");
