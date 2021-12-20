@@ -1,4 +1,3 @@
-const e = require("express");
 const express = require("express");
 const { Sequelize, DataTypes, Model } = require("sequelize");
 const sequelize = new Sequelize("sequelize_db", "m", "", {
@@ -9,6 +8,117 @@ const sequelize = new Sequelize("sequelize_db", "m", "", {
 const server = express();
 
 server.listen(8080);
+
+server.post("/unenrollstudent", (req, res) => {
+  let body;
+  req.on("data", function (data) {
+    body += data;
+    if (body.substr(0, 9) == "undefined") {
+      body = body.substr(9, body.length - 9);
+    }
+  });
+
+  req.on("end", function () {
+    body = JSON.parse(body.toString("utf8"));
+    console.log(body);
+    async function unenrollStudent() {
+      await Student.update(
+        {
+          CampusId: null,
+          collegeAddress: null,
+          college: null,
+        },
+        {
+          where: {
+            id: body.id,
+          },
+          returning: true,
+        }
+      );
+      res.end("Unenrolled");
+    }
+    unenrollStudent();
+  });
+});
+
+server.post("/enrollstudent", (req, res) => {
+  let body;
+  req.on("data", function (data) {
+    body += data;
+    if (body.substr(0, 9) == "undefined") {
+      body = body.substr(9, body.length - 9);
+    }
+  });
+
+  req.on("end", function () {
+    body = JSON.parse(body.toString("utf8"));
+    console.log(body);
+
+    async function enrollStudent() {
+      let name = "";
+      let address = "";
+      async function viewCampus() {
+        const viewCampus = await Campus.findAll({
+          where: {
+            id: body.CampusId,
+          },
+        });
+        console.log(viewCampus.every((campus) => campus instanceof Campus));
+        name = viewCampus[0].dataValues.name;
+        address = viewCampus[0].dataValues.address;
+        await Student.update(
+          {
+            CampusId: body.CampusId,
+            college: name,
+            collegeAddress: address,
+          },
+          {
+            where: {
+              id: body.id,
+            },
+            returning: true,
+          }
+        );
+        res.end("Enrolled");
+      }
+      viewCampus();
+    }
+    enrollStudent();
+  });
+});
+
+server.post("/unaffiliatedstudents", (req, res) => {
+  let body;
+  req.on("data", function (data) {
+    body += data;
+    if (body.substr(0, 9) == "undefined") {
+      body = body.substr(9, body.length - 9);
+    }
+  });
+
+  req.on("end", function () {
+    body = JSON.parse(body.toString("utf8"));
+    console.log(body);
+    let unaffiliatedStudents = "";
+    async function getUnaffiliatedStudents() {
+      const viewStudents = await Student.findAll({
+        where: {
+          CampusId: {
+            [Sequelize.Op.or]: {
+              [Sequelize.Op.ne]: body,
+              [Sequelize.Op.eq]: null,
+            },
+          },
+        },
+      });
+      console.log(viewStudents.every((student) => student instanceof Student));
+      console.log("Unaffiliated students:", JSON.stringify(viewStudents));
+      unaffiliatedStudents = JSON.stringify(viewStudents);
+      res.end(unaffiliatedStudents);
+    }
+    getUnaffiliatedStudents();
+  });
+});
 
 server.post("/removecampusbyid", (req, res) => {
   let body;
@@ -29,6 +139,30 @@ server.post("/removecampusbyid", (req, res) => {
         },
       });
       res.end("Campus deleted");
+    }
+    remove();
+  });
+});
+
+server.post("/removestudentbyid", (req, res) => {
+  let body;
+  req.on("data", function (data) {
+    body += data;
+    if (body.substr(0, 9) == "undefined") {
+      body = body.substr(9, body.length - 9);
+    }
+  });
+
+  req.on("end", function () {
+    body = JSON.parse(body.toString("utf8"));
+    console.log(body);
+    async function remove() {
+      await Student.destroy({
+        where: {
+          id: body,
+        },
+      });
+      res.end("Student deleted");
     }
     remove();
   });
@@ -102,81 +236,155 @@ server.post("/editstudent", (req, res) => {
     if (body.gpa === "") {
       body.gpa = null;
     }
-    async function edit() {
-      await Student.update(body, {
-        where: {
-          id: body.id,
-        },
-      }).then(function (result) {
-        console.log(result);
-      });
-      res.end("Edited");
-      const matchingCampuses = await Campus.findAll({
-        where: {
-          name: body.college,
-          address: body.collegeAddress,
-        },
-      });
-      console.log("*" + matchingCampuses);
-      if (matchingCampuses.length > 1) {
-        // const campuses = Campus.build({
-        //   name: body.college,
-        //   address: body.collegeAddress,
-        // });
-        // newStudent.setCampus(campuses);
-        // console.log(newStudent);
-        async function edit() {
-          console.log("%" + matchingCampuses[0].id);
-          await Campus.update(
-            {
-              CampusId: matchingCampuses[0].id,
-            },
-            {
-              where: {
-                firstName: body.firstName,
-                lastName: body.lastName,
-                email: body.email,
-              },
-              returning: true,
-            }
-          );
+    if (
+      body.college === null ||
+      body.collegeAddress === null ||
+      body.college === "" ||
+      body.collegeAddress === "" ||
+      body.college === undefined ||
+      body.collegeAddress === undefined
+    ) {
+      body.CampusId = null;
+      async function edit() {
+        await Student.update(body, {
+          where: {
+            id: body.id,
+          },
+        }).then(function (result) {
+          console.log(result);
+        });
+        res.end("Edited");
+        console.log("hello");
+        console.log(body.college);
+        if (
+          body.college === null ||
+          body.collegeAddress === null ||
+          body.college === "" ||
+          body.collegeAddress === "" ||
+          body.college === undefined ||
+          body.collegeAddress === undefined
+        ) {
+          return;
         }
-        edit();
-      } else {
-        async function createCampus() {
-          await Campus.destroy({
+        const matchingCampuses = await Campus.findAll({
+          where: {
+            name: body.college,
+            address: body.collegeAddress,
+          },
+        });
+        console.log("*" + matchingCampuses);
+        if (matchingCampuses.length < 1) {
+          async function createCampus() {
+            await Campus.destroy({
+              where: {
+                name: body.college,
+                address: body.collegeAddress,
+              },
+            });
+            const newCampus = await Campus.create({
+              name: body.college,
+              address: body.collegeAddress,
+            });
+            console.log(newCampus.id);
+            console.log("%" + newCampus.id);
+            async function editStudent() {
+              await Student.update(
+                {
+                  CampusId: newCampus.id,
+                },
+                {
+                  where: {
+                    firstName: body.firstName,
+                    lastName: body.lastName,
+                    email: body.email,
+                  },
+                  returning: true,
+                }
+              );
+            }
+            editStudent();
+          }
+          createCampus();
+        }
+      }
+      edit();
+    } else {
+      async function getCampusId() {
+        const getCampus = await Campus.findAll({
+          where: {
+            name: body.college,
+            address: body.collegeAddress,
+          },
+        });
+        if (getCampus.length >= 1) {
+          body.CampusId = getCampus[0].dataValues.id;
+        }
+        async function edit() {
+          await Student.update(body, {
+            where: {
+              id: body.id,
+            },
+          }).then(function (result) {
+            console.log(result);
+          });
+          res.end("Edited");
+          console.log("hello");
+          console.log(body.college);
+          if (
+            body.college === null ||
+            body.collegeAddress === null ||
+            body.college === "" ||
+            body.collegeAddress === "" ||
+            body.college === undefined ||
+            body.collegeAddress === undefined
+          ) {
+            return;
+          }
+          const matchingCampuses = await Campus.findAll({
             where: {
               name: body.college,
               address: body.collegeAddress,
             },
           });
-          const newCampus = await Campus.create({
-            name: body.college,
-            address: body.collegeAddress,
-          });
-          console.log(newCampus.id);
-          console.log("%" + newCampus.id);
-          async function edit() {
-            await Student.update(
-              {
-                CampusId: newCampus.id,
-              },
-              {
+          console.log("*" + matchingCampuses);
+          if (matchingCampuses.length < 1) {
+            async function createCampus() {
+              await Campus.destroy({
                 where: {
-                  firstName: body.firstName,
-                  lastName: body.lastName,
-                  email: body.email,
+                  name: body.college,
+                  address: body.collegeAddress,
                 },
-                returning: true,
+              });
+              const newCampus = await Campus.create({
+                name: body.college,
+                address: body.collegeAddress,
+              });
+              console.log(newCampus.id);
+              console.log("%" + newCampus.id);
+              async function editStudent() {
+                await Student.update(
+                  {
+                    CampusId: newCampus.id,
+                  },
+                  {
+                    where: {
+                      firstName: body.firstName,
+                      lastName: body.lastName,
+                      email: body.email,
+                    },
+                    returning: true,
+                  }
+                );
               }
-            );
+              editStudent();
+            }
+            createCampus();
           }
-          edit();
         }
-        createCampus();
+        edit();
       }
+      getCampusId();
     }
-    edit();
   });
 });
 
@@ -327,7 +535,7 @@ Campus.init(
       },
     },
     imgUrl: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT("long"),
       defaultValue: "https://i.ibb.co/LS7GxDK/college.png",
     },
     address: {
@@ -338,7 +546,7 @@ Campus.init(
       },
     },
     description: {
-      type: DataTypes.TEXT,
+      type: DataTypes.TEXT("long"),
     },
   },
   {
@@ -377,7 +585,7 @@ Student.init(
       },
     },
     imageUrl: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT("long"),
       defaultValue: "https://i.ibb.co/cQDsxMD/student.webp",
     },
     gpa: {
@@ -400,7 +608,7 @@ Student.init(
     timestamps: true,
   }
 );
-console.log(Student === sequelize.models.Student); // true
+console.log(Student === sequelize.models.Student);
 console.log(sequelize.models);
 
 Student.belongsTo(Campus);
@@ -433,7 +641,17 @@ const addStudent = (req, res) => {
         },
       });
       const newStudent = await Student.create(body);
-      console.log(newStudent);
+      if (
+        body.college === null ||
+        body.collegeAddress === null ||
+        body.college === "" ||
+        body.collegeAddress === "" ||
+        body.college === undefined ||
+        body.collegeAddress === undefined
+      ) {
+        res.end("recorded");
+        return;
+      }
       const matchingCampuses = await Campus.findAll({
         where: {
           name: body.college,
@@ -441,13 +659,7 @@ const addStudent = (req, res) => {
         },
       });
       console.log("*" + matchingCampuses);
-      if (matchingCampuses.length > 1) {
-        // const campuses = Campus.build({
-        //   name: body.college,
-        //   address: body.collegeAddress,
-        // });
-        // newStudent.setCampus(campuses);
-        // console.log(newStudent);
+      if (matchingCampuses.length >= 1) {
         async function edit() {
           console.log("%" + matchingCampuses[0].id);
           await Campus.update(
@@ -497,16 +709,6 @@ const addStudent = (req, res) => {
           edit();
         }
         createCampus();
-        // const buildCampuses = Campus.build({
-        //   name: body.college,
-        //   address: body.collegeAddress,
-        // });
-        // newStudent.setCampus(buildCampuses);
-        // async function getAssociation() {
-        //   const associatedCampus = await newStudent.getCampus();
-        //   console.log("^" + associatedCampus);
-        // }
-        // getAssociation();
       }
       console.log(matchingCampuses.every((campus) => campus instanceof Campus));
 
