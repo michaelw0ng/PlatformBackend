@@ -507,6 +507,30 @@ server.post("/campuses", (req, res) => {
   viewCampuses();
 });
 
+server.get("/campuses", (req, res) => {
+  let allCampuses = "";
+  async function viewCampuses() {
+    const viewCampuses = await Campus.findAll();
+    console.log(viewCampuses.every((campus) => campus instanceof Campus));
+    console.log("All campuses:", JSON.stringify(viewCampuses));
+    allCampuses = JSON.stringify(viewCampuses);
+    res.end(allCampuses);
+  }
+  viewCampuses();
+});
+
+server.get("/students", (req, res) => {
+  let allStudents = "";
+  async function viewStudents() {
+    const viewStudents = await Student.findAll();
+    console.log(viewStudents.every((student) => student instanceof Student));
+    console.log("All students:", JSON.stringify(viewStudents));
+    allStudents = JSON.stringify(viewStudents);
+    res.end(allStudents);
+  }
+  viewStudents();
+});
+
 server.post("/students", (req, res) => {
   let allStudents = "";
   async function viewStudents() {
@@ -556,7 +580,7 @@ Campus.init(
   }
 );
 
-console.log(Campus === sequelize.models.Campus); // true
+console.log(Campus === sequelize.models.Campus);
 console.log(sequelize.models);
 
 class Student extends Model {}
@@ -722,24 +746,10 @@ const addStudent = (req, res) => {
       console.log("All students:", JSON.stringify(viewStudents));
     }
     viewStudents();
-    async function findTables() {
-      sequelize
-        .getQueryInterface()
-        .showAllSchemas()
-        .then((tableObj) => {
-          console.log("// Tables in database", "==========================");
-          console.log(tableObj);
-        })
-        .catch((err) => {
-          console.log("showAllSchemas ERROR", err);
-        });
-    }
     async function sync() {
       await sequelize.sync();
     }
-
     sync();
-    findTables();
   });
 };
 
@@ -767,30 +777,6 @@ const addCampus = (req, res) => {
       res.end("recorded");
     }
     createCampus();
-    async function viewCampuses() {
-      const viewCampuses = await Campus.findAll();
-      console.log(viewCampuses.every((campus) => campus instanceof Campus));
-      console.log("All campuses:", JSON.stringify(viewCampuses));
-    }
-    viewCampuses();
-    async function findTables() {
-      sequelize
-        .getQueryInterface()
-        .showAllSchemas()
-        .then((tableObj) => {
-          console.log("// Tables in database", "==========================");
-          console.log(tableObj);
-        })
-        .catch((err) => {
-          console.log("showAllSchemas ERROR", err);
-        });
-    }
-    async function sync() {
-      await sequelize.sync();
-    }
-
-    sync();
-    findTables();
   });
 };
 
