@@ -1,5 +1,2 @@
-**Built by**: Michael Wong **Github**: michaelw0ng
-
-**Frontend**:https://github.com/michaelw0ng/StudentCRUDPlatform
-
-Frontend, Backend, and Postgres server must be running
+**Technologies**: React, Redux, HTML/CSS, Express.js, Sequelize </br>
+**Frontend**: https://github.com/michaelw0ng/StudentCRUDPlatform
