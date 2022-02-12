@@ -1,2 +1,2 @@
 **Technologies**: React, Redux, HTML/CSS, Express.js, Sequelize </br>
-**Frontend**: https://github.com/michaelw0ng/StudentCRUDPlatform
+**Frontend**: https://github.com/michaelw0ng/Platform
